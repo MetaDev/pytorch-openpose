@@ -31,17 +31,27 @@ def parse_image(cv_image):
 
     canvas = util.draw_handpose(canvas, all_hand_peaks)
     rgb_image=canvas
-    return rgb_image,candidate
-file_name="Limerence"
-cap = cv2.VideoCapture(file_name+'.mp4')
+    skeleton=[(-1,-1)]*18
+    for i in range(18):
+        for n in range(len(subset)):
+            index = int(subset[n][i])
+            if index == -1:
+                continue
+            x, y = candidate[index][0:2]
+            skeleton[i]=(x,y)
+
+    return rgb_image,skeleton,[peaks.tolist() for peaks in all_hand_peaks]
+file_name="afjorddance"
+file_extension=".mp4"
+cap = cv2.VideoCapture(file_name+file_extension)
 length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 skeleton,parsed_movie=[],[]
 i=0
-start=0.25
-end=0.3
+start=0.0
+end=1
 fps = cap.get(cv2.CAP_PROP_FPS)
 #set to 1 to not skip any frames
-skip_frames=20
+skip_frames=50
 
 while (cap.isOpened()):
     ret, frame = cap.read()
@@ -55,17 +65,16 @@ while (cap.isOpened()):
         break
     print("frame: ", i, ", decode at length: ", i/ length)
     #in the format width,height
-    parsed_img,joints=parse_image(frame)
+    parsed_img,bones,hands=parse_image(frame)
     parsed_movie.append(parsed_img)
-    skeleton.append(joints.shape)
+    skeleton.append((bones,hands))
     size = parsed_img.shape[:2][::-1]
-
 
 
 print("finished conversion: now saving")
 import json
 json = json.dumps(skeleton)
-with open("skeleton.json", "w") as json_file:
+with open(file_name+"_skeleton.json", "w") as json_file:
     json_file.write(json)
 #
 
@@ -79,6 +88,3 @@ for i in range(len(parsed_movie)):
 out_0.release()
 # out_1.release()
 
-norm=0.0
-if norm != 0:
-    print("test")
